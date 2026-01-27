@@ -1,12 +1,13 @@
-print("🔥 THIS IS THE REAL MAIN.PY 🔥")
-
 from fastapi import FastAPI, HTTPException
 from database import get_db_connection
 from pydantic import BaseModel
 from datetime import date, time
 
-app = FastAPI()
-
+app = FastAPI(
+    title="Shop Record System API",
+    description="Backend API for managing shop transactions",
+    version="1.0.0"
+)
 
 # ---------- SCHEMA ----------
 class Transaction(BaseModel):
@@ -28,15 +29,20 @@ def root():
 def get_transactions():
     conn = get_db_connection()
     if conn is None:
-        raise HTTPException(status_code=500, detail="DB connection failed")
+        raise HTTPException(status_code=500, detail="Database connection failed")
 
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM transactions")
-    data = cursor.fetchall()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM transactions")
+        data = cursor.fetchall()
+        return data
 
-    cursor.close()
-    conn.close()
-    return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # ---------- POST ----------
@@ -44,25 +50,29 @@ def get_transactions():
 def add_transaction(transaction: Transaction):
     conn = get_db_connection()
     if conn is None:
-        raise HTTPException(status_code=500, detail="DB connection failed")
+        raise HTTPException(status_code=500, detail="Database connection failed")
 
-    cursor = conn.cursor()
-    query = """
-        INSERT INTO transactions (type, amount, description, date, time)
-        VALUES (%s, %s, %s, %s, %s)
-    """
-    values = (
-        transaction.type,
-        transaction.amount,
-        transaction.description,
-        transaction.date,
-        transaction.time
-    )
+    try:
+        cursor = conn.cursor()
+        query = """
+            INSERT INTO transactions (type, amount, description, date, time)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        values = (
+            transaction.type,
+            transaction.amount,
+            transaction.description,
+            transaction.date,
+            transaction.time
+        )
 
-    cursor.execute(query, values)
-    conn.commit()
+        cursor.execute(query, values)
+        conn.commit()
+        return {"message": "Transaction added successfully"}
 
-    cursor.close()
-    conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return {"message": "Transaction added successfully"}
+    finally:
+        cursor.close()
+        conn.close()
