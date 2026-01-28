@@ -1,30 +1,35 @@
+print("🔥 REAL MAIN.PY DEPLOYED 🔥")
+
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from datetime import date, time
 
 app = FastAPI()
 
-# Allow frontend to call backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# ---------------- HEALTH CHECK ----------------
 @app.get("/")
 def root():
     return {"status": "API is running"}
 
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+# ---------------- TEMP DATA (NO DB) ----------------
+fake_transactions = []
+
+class Transaction(BaseModel):
+    type: str
+    amount: float
+    description: str
+    date: date
+    time: time
+
 @app.get("/transactions")
 def get_transactions():
-    # Temporary dummy data
-    return [
-        {
-            "type": "income",
-            "amount": 5000,
-            "description": "Sample transaction",
-            "date": "2025-01-01",
-            "time": "10:00"
-        }
-    ]
+    return fake_transactions
+
+@app.post("/transactions")
+def add_transaction(transaction: Transaction):
+    fake_transactions.append(transaction)
+    return {"message": "Transaction added (no DB)"}
