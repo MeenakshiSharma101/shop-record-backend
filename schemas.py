@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import date, time
 
+print("schemas.py loaded")
 
 class TransactionCreate(BaseModel):
     type: str
